@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analyze Image - AI Breast Cancer Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class="bi bi-heart-pulse me-2"></i>
+                AI Breast Cancer Detection
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content pt-5 mt-4">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <h1 class="text-center mb-4">Breast Cancer Classification</h1>
+                    <div class="upload-form">
+                        <h3 class="text-center mb-4">Upload an image</h3>
+                        <form id="upload-form" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input type="file" name="image" class="form-control" id="imageInput" required>
+                            </div>
+                            <div class="text-center mb-3">
+                                <img id="imagePreview" class="img-fluid d-none preview-image rounded" alt="Uploaded image">
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </form>
+
+                        <div id="result" class="mt-4 d-none">
+                            <h3 class="text-center mb-3" id="mainPrediction"></h3>
+                            <h4 class="text-center mb-3">Prediction Percentages:</h4>
+                            <div id="predictionPercentages" class="prediction-percentages"></div>
+                        </div>
+
+                        <div id="loading" class="text-center mt-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const result = document.getElementById('result');
+        const mainPrediction = document.getElementById('mainPrediction');
+        const predictionPercentages = document.getElementById('predictionPercentages');
+        const loading = document.getElementById('loading');
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                imagePreview.src = URL.createObjectURL(file);
+                imagePreview.classList.remove('d-none');
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            loading.classList.remove('d-none');
+            result.classList.add('d-none');
+
+            try {
+                const response = await fetch('/predict/breast', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    mainPrediction.textContent = `Prediction: ${data.prediction}`;
+                    predictionPercentages.innerHTML = '';
+
+                    Object.entries(data.percentages).forEach(([label, percent]) => {
+                        const value = parseFloat(percent);
+                        const div = document.createElement('div');
+                        div.classList.add('mb-2');
+                        div.innerHTML = `
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>${label}</span>
+                                <span>${percent}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 0%"
+                                     aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>`;
+                        predictionPercentages.appendChild(div);
+                    });
+
+                    result.classList.remove('d-none');
+
+                    setTimeout(() => {
+                        document.querySelectorAll('.progress-bar').forEach(bar => {
+                            const width = bar.getAttribute('aria-valuenow') + '%';
+                            bar.style.width = width;
+                        });
+                    }, 100);
+                } else {
+                    alert(data.error || "Prediction failed");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred during prediction.");
+            } finally {
+                loading.classList.add('d-none');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+
+services:
+  main_app:
+    build: ./main_app
+    ports:
+      - "5000:5000"
+    networks:
+      - cancer_net
+
+  lung_app:
+    build: ./lung_app
+    ports:
+      - "5001:5001"
+    networks:
+      - cancer_net
+
+  breast_app:
+    build: ./breast_app
+    ports:
+      - "5002:5002"
+    networks:
+      - cancer_net
+
+  prostate_app:
+    build: ./prostate_app
+    ports:
+      - "5003:5003"
+    networks:
+      - cancer_net
+
+networks:
+  cancer_net:

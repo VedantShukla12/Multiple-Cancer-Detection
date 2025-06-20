@@ -1,0 +1,120 @@
+<html>
+ <head>
+  <title>
+   Lung Cancer Classification
+  </title>
+  <style>
+   body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+            font-size: 36px;
+        }
+        p {
+            font-size: 18px;
+            color: #333;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80%;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+  </style>
+ </head>
+ <body>
+  <div class="container">
+   <h1>
+    Lung Cancer Classification
+   </h1>
+   <p>
+    Upload an image
+   </p>
+   <form id="imageUploadForm" class="d-flex flex-column align-items-center" enctype="multipart/form-data">
+    <input type="file" class="form-control my-2" id="imageInput" accept="image/*" onchange="loadImage(event)" required>
+    <img id="imageOutput" width="200">
+    <input type="submit" class="btn btn-primary my-2 w-25" id="submit" value="Submit">
+</form>
+
+<!-- Display response -->
+<div id="response" class="mt-4"></div>
+</div>
+
+<!-- JavaScript for handling the image upload and prediction -->
+<script>
+// Function to display the selected image
+function loadImage(event) {
+    const output = document.getElementById('imageOutput');
+    output.src = URL.createObjectURL(event.target.files[0]);
+}
+
+// Function to handle form submission and send the image to the backend
+document.getElementById('imageUploadForm').onsubmit = async function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Prepare the form data
+    const formData = new FormData();
+    const fileField = document.getElementById('imageInput').files[0];
+    formData.append('file', fileField);
+
+    // Send the image to the Flask backend
+    try {
+        const response = await fetch('/predict', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        // Display the prediction result and percentages
+        let output = `<h2>Prediction: ${result.prediction}</h2>`;
+        output += "<h3>Prediction Percentages:</h3><ul>";
+
+        for (const [className, percentage] of Object.entries(result.percentages)) {
+            output += `<li>${className}: ${percentage}</li>`;
+        }
+        output += "</ul>";
+
+        document.getElementById('response').innerHTML = output;
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('response').innerHTML = 'An error occurred during prediction.';
+    }
+};
+</script>
+</body>
+</html>
